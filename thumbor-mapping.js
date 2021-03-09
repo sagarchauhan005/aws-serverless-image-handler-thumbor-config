@@ -25,7 +25,7 @@ class ThumborMapping {
         this.path = event.path;
         this.consoleLog("Path is : "+this.path);
         let edits = this.path.match(/filters:[^\)]+/g);
-        this.consoleLog("Edits are : "+this.edits);
+        this.consoleLog("Edits are : "+JSON.stringify(this.edits));
         if (!edits) {
             edits = [];
         }
@@ -62,13 +62,15 @@ class ThumborMapping {
             this.path.includes('contain') ||
             this.path.includes('fill')
         ) {
-            if (this.edits.resize === undefined) {
+            try{
+               this.consoleLog("Inside condition resize : "+JSON.stringify(this.edits));
+                this.consoleLog("Inside custom crop_type");
                 let crop_type = this.path.match(/((\bcover\b)|(\binside\b)|(\bcontain\b)|(\bfill\b)|(\boutside\b))/g);
-                this.edits.resize = {
-                    fit : crop_type
-                };
+                this.consoleLog("Crop_type : "+crop_type);
+                this.edits.resize.fit = crop_type;
+            }catch (e) {
+                this.edits.resize.fit = 'inside';
             }
-            this.edits.resize.fit = 'inside';
         }
 
         // Parse the image path
@@ -77,7 +79,7 @@ class ThumborMapping {
             this.mapFilter(edit, filetype);
         }
 
-        this.consoleLog("Entire config : "+this.edits);
+        this.consoleLog("Entire config : "+JSON.stringify(this.edits));
         return this;
     }
 

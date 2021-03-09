@@ -9,6 +9,10 @@ class ImageRequest {
         this.secretsManager = secretsManager;
     }
 
+
+    consoleLog(message){
+        console.log(message);
+    }
     /**
      * Initializer function for creating a new image request, used by the image
      * handler to perform image modifications.
@@ -155,7 +159,7 @@ class ImageRequest {
             throw {
                 status: ('NoSuchKey' === err.code) ? 404 : 500,
                 code: err.code,
-                message: err.message
+                message: err.message + " Key : "+key
             };
         }
     }
@@ -257,7 +261,9 @@ class ImageRequest {
                     path = path.replace(matchPattern, substitution);
                 }
             }
-            return decodeURIComponent(path.replace(/\/(\d+x\d+)\/|filters:[^\)]+|\/fit-in+|^\/+/g, '').replace(/\)/g, '').replace(/^\/+/, ''));
+            let final_path = path.replace(/((\bcover\/\b)|(\binside\/\b)|(\bcontain\/\b)|(\bfill\/\b)|(\boutside\/\b))/g,'').replace(/\/(\d+x\d+)\/|filters:[^\)]+|\/fit-in+|^\/+/g, '').replace(/\)/g, '').replace(/^\/+/, '');
+            this.consoleLog("Final Path : "+final_path);
+            return decodeURIComponent(final_path);
         }
 
         // Return an error for all other conditions
@@ -288,15 +294,16 @@ class ImageRequest {
         );
 
         //Check if path is base 64 encoded
-        let isBase64Encoded = true;
-        try {
-            this.decodeRequest(event);
-        } catch(error) {
-            console.error(error);
-            isBase64Encoded = false;
-        } 
+        // let isBase64Encoded = true;
+        // try {
+        //     this.decodeRequest(event);
+        // } catch(error) {
+        //     console.error(error);
+        //     isBase64Encoded = false;
+        // }
 
-        if (matchDefault.test(path) && isBase64Encoded) {  // use sharp
+        return 'Thumbor';
+        if (matchDefault.test(path)) {  // use sharp
             return 'Default';
         } else if (matchCustom.test(path) && definedEnvironmentVariables) {  // use rewrite function then thumbor mappings
             return 'Custom';
