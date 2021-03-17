@@ -8,21 +8,43 @@ const secretsManager = new AWS.SecretsManager();
 
 const ImageRequest = require('./image-request.js');
 const ImageHandler = require('./image-handler.js');
+const FileRequestHandler = require('./file-request-handler');
 
 exports.handler = async (event) => {
-    console.log(event);
-    const imageRequest = new ImageRequest(s3, secretsManager);
-    const imageHandler = new ImageHandler(s3, rekognition);
+    let fqdn = event.path;
+    let isFile = fqdn.includes("download");
+    let processedRequest;
+    let fileRequestHandler;
+    let request;
+    let imageRequest;
+    let imageHandler;
     const isAlb = event.requestContext && event.requestContext.hasOwnProperty('elb');
+    if(isFile){
+        console.log("FQDN is : "+fqdn);
+    }
 
     try {
-        const request = await imageRequest.setup(event);
+        /*
+        * Handles the cases for file request or image compression
+        * */
+        if (isFile) {
+            fileRequestHandler = new FileRequestHandler(s3, secretsManager);
+            request = await fileRequestHandler.setup(event);
+            processedRequest = await fileRequestHandler.process(request);
+        } else {
+            imageRequest = new ImageRequest(s3, secretsManager);
+            imageHandler = new ImageHandler(s3, rekognition);
+            request = await imageRequest.setup(event);
+            processedRequest = await imageHandler.process(request);
+        }
         console.log(request);
-
-        const processedRequest = await imageHandler.process(request);
         const headers = getResponseHeaders(false, isAlb);
         headers["Content-Type"] = request.ContentType;
         headers["Expires"] = request.Expires;
+
+        if (isFile) {
+            headers["Content-Disposition"] = "attachment";
+        }
         headers["Last-Modified"] = request.LastModified;
         headers["Cache-Control"] = request.CacheControl;
 
@@ -36,7 +58,7 @@ exports.handler = async (event) => {
         return {
             statusCode: 200,
             isBase64Encoded: true,
-            headers : headers,
+            headers: headers,
             body: processedRequest
         };
     } catch (err) {
@@ -51,7 +73,7 @@ exports.handler = async (event) => {
             try {
                 const bucket = process.env.DEFAULT_FALLBACK_IMAGE_BUCKET;
                 const objectKey = process.env.DEFAULT_FALLBACK_IMAGE_KEY;
-                const defaultFallbackImage = await s3.getObject({ Bucket: bucket, Key: objectKey }).promise();
+                const defaultFallbackImage = await s3.getObject({Bucket: bucket, Key: objectKey}).promise();
                 const headers = getResponseHeaders(false, isAlb);
                 headers['Content-Type'] = defaultFallbackImage.ContentType;
                 headers['Last-Modified'] = defaultFallbackImage.LastModified;
@@ -72,15 +94,19 @@ exports.handler = async (event) => {
             return {
                 statusCode: err.status,
                 isBase64Encoded: false,
-                headers : getResponseHeaders(true, isAlb),
+                headers: getResponseHeaders(true, isAlb),
                 body: JSON.stringify(err)
             };
         } else {
             return {
                 statusCode: 500,
                 isBase64Encoded: false,
-                headers : getResponseHeaders(true, isAlb),
-                body: JSON.stringify({ message: 'Internal error. Please contact the system administrator.', code: 'InternalError', status: 500 })
+                headers: getResponseHeaders(true, isAlb),
+                body: JSON.stringify({
+                    message: 'Internal error. Please contact the system administrator.',
+                    code: 'InternalError',
+                    status: 500
+                })
             };
         }
     }
