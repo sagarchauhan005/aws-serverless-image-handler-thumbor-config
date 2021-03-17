@@ -164,7 +164,7 @@ class FileRequestHandler {
         try{
             let folder = key.split('/')[0];
             this.consoleLog("Folder Array : "+folder);
-            let allowed_folders = ['inventory-csv','processing-csv','sample-csv'];
+            let allowed_folders = ['csv_images','inventory-csv','processing-csv','sample-csv'];
             this.consoleLog("Allowed : "+allowed_folders.includes(folder));
             return allowed_folders.includes(folder);
         }catch (e) {
