@@ -82,7 +82,7 @@ class FileRequestHandler {
      */
     parseFileKey(event) {
         try{
-            let s3_file_path = event.path.replace(/((\bdownload\/\b)|)/g,'').replace(/\)/g, '').replace(/^\/+/, '');
+            let s3_file_path = event.path.replace(/((\bdownload\/\b)|(\blive\/\b)|(\bstaging\/\b)|)/g,'').replace(/\)/g, '').replace(/^\/+/, '');
             this.consoleLog("S3 Final Path : "+s3_file_path);
             return decodeURIComponent(s3_file_path);
         }catch (e) {

@@ -194,7 +194,8 @@ class ImageRequest {
         } else if (requestType === "Thumbor" || requestType === "Custom") {
             // Use the default image source bucket env var
             const sourceBuckets = this.getAllowedSourceBuckets();
-            return sourceBuckets[0];
+            return (event.path.includes("/live/")) ? sourceBuckets[0] : sourceBuckets[1];
+            //return sourceBuckets[0];
         } else {
             throw ({
                 status: 404,
@@ -261,7 +262,7 @@ class ImageRequest {
                     path = path.replace(matchPattern, substitution);
                 }
             }
-            let final_path = path.replace(/((\bcover\/\b)|(\binside\/\b)|(\bcontain\/\b)|(\bfill\/\b)|(\boutside\/\b))/g,'').replace(/\/(\d+x\d+)\/|filters:[^\)]+|\/fit-in+|^\/+/g, '').replace(/\)/g, '').replace(/^\/+/, '');
+            let final_path = path.replace(/((\bcover\/\b)|(\blive\/\b)|(\bstaging\/\b)|(\binside\/\b)|(\bcontain\/\b)|(\bfill\/\b)|(\boutside\/\b))/g,'').replace(/\/(\d+x\d+)\/|filters:[^\)]+|\/fit-in+|^\/+/g, '').replace(/\)/g, '').replace(/^\/+/, '');
             this.consoleLog("Final Path : "+final_path);
             return decodeURIComponent(final_path);
         }
